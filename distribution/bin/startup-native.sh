@@ -119,7 +119,7 @@ if [ "${NACOS_TYPE}" = "Java" ]; then
     RUN_CMD="${RUN_CMD} -XX:-UseLargePages"
     RUN_CMD="${RUN_CMD} -jar ${NACOS_SERVER}"
 
-    RUN_CMD="${RUN_CMD} --server.max-http-header-size=524288"
+    RUN_CMD="${RUN_CMD} --server.max-http-header-size=20971520"
 
     if [ "$JAVA_OPT_EXT_FIX" = "" ]; then
         RUN_CMD="${JAVA} ${RUN_CMD}"
