@@ -19,6 +19,7 @@ derby.log
 yarn.lock
 .flattened-pom.xml
 lefthook.yml
+distribution/data/ai-resources
 distribution/data/tenant-config-data
 distribution/data/protocol
 distribution/conf/*.sql
