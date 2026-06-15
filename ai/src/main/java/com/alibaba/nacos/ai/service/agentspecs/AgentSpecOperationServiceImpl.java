@@ -28,7 +28,9 @@ import com.alibaba.nacos.ai.service.repository.QueryCondition;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.service.resource.ResourceVersionInfo;
 import com.alibaba.nacos.ai.service.trace.AiResourceTraceService;
+import com.alibaba.nacos.ai.storage.LocalDiskAiResourceStorage;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
+import com.alibaba.nacos.plugin.ai.storage.spi.AiResourceStorage;
 import com.alibaba.nacos.ai.utils.AgentSpecContentDigestUtils;
 import com.alibaba.nacos.ai.utils.AgentSpecSeedArchiveReader;
 import com.alibaba.nacos.ai.utils.AgentSpecZipParser;
@@ -87,8 +89,6 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     
     private static final Logger LOGGER =
         LoggerFactory.getLogger(AgentSpecOperationServiceImpl.class);
-    
-    private static final String STORAGE_PROVIDER_NACOS_CONFIG = "nacos_config";
     
     private static final String RESOURCE_TYPE_AGENTSPEC = "agentspec";
     
@@ -1117,9 +1117,12 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
      */
     private static String resolveStorageProvider() {
         String provider =
-            EnvUtil.getProperty(Constants.AgentSpecs.AGENTSPEC_STORAGE_PROVIDER_CONFIG_KEY,
-                STORAGE_PROVIDER_NACOS_CONFIG);
-        return StringUtils.isBlank(provider) ? STORAGE_PROVIDER_NACOS_CONFIG : provider.trim();
+            EnvUtil.getProperty(Constants.AgentSpecs.AGENTSPEC_STORAGE_PROVIDER_CONFIG_KEY);
+        if (StringUtils.isNotBlank(provider)) {
+            return provider.trim();
+        }
+        return EnvUtil.getStandaloneMode() ? LocalDiskAiResourceStorage.TYPE
+            : NacosConfigAiResourceStorage.TYPE;
     }
     
     /**
@@ -1270,8 +1273,8 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         
         // 1) Main config file (manifest.json)
         byte[] mainContent = buildMainContent(agentSpec, uniformId);
-        StorageKey mainKey = NacosConfigAiResourceStorage.buildStorageKey(provider, namespaceId,
-            NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC, agentSpecName, version,
+        StorageKey mainKey = AiResourceStorage.buildStorageKey(provider, namespaceId,
+            AiResourceStorage.RESOURCE_TYPE_AGENTSPEC, agentSpecName, version,
             NacosConfigAiResourceStorage.getMainFilePath(AgentSpecUtils.AGENTSPEC_MAIN_DATA_ID));
         tasks.add(CompletableFuture.runAsync(() -> {
             try {
@@ -1289,8 +1292,8 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
                     NacosConfigAiResourceStorage.getAgentSpecResourceFilePath(resource.getType(),
                         resource.getName());
                 byte[] content = buildResourceContent(resource, uniformId);
-                StorageKey resourceKey = NacosConfigAiResourceStorage.buildStorageKey(provider,
-                    namespaceId, NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC,
+                StorageKey resourceKey = AiResourceStorage.buildStorageKey(provider,
+                    namespaceId, AiResourceStorage.RESOURCE_TYPE_AGENTSPEC,
                     agentSpecName, version, path);
                 tasks.add(CompletableFuture.runAsync(() -> {
                     try {
@@ -1321,9 +1324,9 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         String version)
         throws NacosException {
         // Step 1: Read main config file (manifest.json)
-        StorageKey mainKey = NacosConfigAiResourceStorage.buildStorageKey(resolveStorageProvider(),
+        StorageKey mainKey = AiResourceStorage.buildStorageKey(resolveStorageProvider(),
             namespaceId,
-            NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC, agentSpecName, version,
+            AiResourceStorage.RESOURCE_TYPE_AGENTSPEC, agentSpecName, version,
             NacosConfigAiResourceStorage.getMainFilePath(AgentSpecUtils.AGENTSPEC_MAIN_DATA_ID));
         byte[] mainBytes = storageRouter.route(mainKey).get(mainKey);
         if (mainBytes == null) {
@@ -1352,8 +1355,8 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
                     NacosConfigAiResourceStorage.getAgentSpecResourceFilePath(resourceRef.getType(),
                         resourceRef.getName());
                 StorageKey resourceKey =
-                    NacosConfigAiResourceStorage.buildStorageKey(resolveStorageProvider(),
-                        namespaceId, NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC,
+                    AiResourceStorage.buildStorageKey(resolveStorageProvider(),
+                        namespaceId, AiResourceStorage.RESOURCE_TYPE_AGENTSPEC,
                         agentSpecName, version,
                         path);
                 byte[] resourceBytes = storageRouter.route(resourceKey).get(resourceKey);
@@ -1375,9 +1378,9 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
     private AgentSpec loadAgentSpecMetaFromStorage(String namespaceId, String agentSpecName,
         String version)
         throws NacosException {
-        StorageKey mainKey = NacosConfigAiResourceStorage.buildStorageKey(resolveStorageProvider(),
+        StorageKey mainKey = AiResourceStorage.buildStorageKey(resolveStorageProvider(),
             namespaceId,
-            NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC, agentSpecName, version,
+            AiResourceStorage.RESOURCE_TYPE_AGENTSPEC, agentSpecName, version,
             NacosConfigAiResourceStorage.getMainFilePath(AgentSpecUtils.AGENTSPEC_MAIN_DATA_ID));
         byte[] mainBytes = storageRouter.route(mainKey).get(mainKey);
         if (mainBytes == null) {
@@ -1453,9 +1456,9 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
         String version)
         throws NacosException {
         // Step 1: Read main config first to get the resource reference list
-        StorageKey mainKey = NacosConfigAiResourceStorage.buildStorageKey(resolveStorageProvider(),
+        StorageKey mainKey = AiResourceStorage.buildStorageKey(resolveStorageProvider(),
             namespaceId,
-            NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC, agentSpecName, version,
+            AiResourceStorage.RESOURCE_TYPE_AGENTSPEC, agentSpecName, version,
             NacosConfigAiResourceStorage.getMainFilePath(AgentSpecUtils.AGENTSPEC_MAIN_DATA_ID));
         byte[] mainBytes = storageRouter.route(mainKey).get(mainKey);
         if (mainBytes != null) {
@@ -1469,8 +1472,8 @@ public class AgentSpecOperationServiceImpl implements AgentSpecOperationService 
                         resourceRef.getType(),
                         resourceRef.getName());
                     StorageKey resourceKey =
-                        NacosConfigAiResourceStorage.buildStorageKey(resolveStorageProvider(),
-                            namespaceId, NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC,
+                        AiResourceStorage.buildStorageKey(resolveStorageProvider(),
+                            namespaceId, AiResourceStorage.RESOURCE_TYPE_AGENTSPEC,
                             agentSpecName, version,
                             path);
                     storageRouter.route(resourceKey).delete(resourceKey);

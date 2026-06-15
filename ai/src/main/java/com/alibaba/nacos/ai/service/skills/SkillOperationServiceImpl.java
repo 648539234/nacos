@@ -33,7 +33,9 @@ import com.alibaba.nacos.ai.service.repository.QueryCondition;
 import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.service.resource.ResourceVersionInfo;
 import com.alibaba.nacos.ai.service.trace.AiResourceTraceService;
+import com.alibaba.nacos.ai.storage.LocalDiskAiResourceStorage;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
+import com.alibaba.nacos.plugin.ai.storage.spi.AiResourceStorage;
 import com.alibaba.nacos.ai.utils.ExecutorUtils;
 import com.alibaba.nacos.ai.utils.SkillContentDigestUtils;
 import com.alibaba.nacos.ai.utils.SkillRequestUtil;
@@ -97,11 +99,6 @@ import static com.alibaba.nacos.ai.constant.Constants.Skills;
 public class SkillOperationServiceImpl implements SkillOperationService {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(SkillOperationServiceImpl.class);
-    
-    /**
-     * Default storage provider for skills when system config is not specified.
-     */
-    private static final String STORAGE_PROVIDER_NACOS_CONFIG = "nacos_config";
     
     /**
      * System config key for skill storage provider.
@@ -1179,8 +1176,12 @@ public class SkillOperationServiceImpl implements SkillOperationService {
      */
     private static String resolveSkillStorageProvider() {
         String provider =
-            EnvUtil.getProperty(SKILL_STORAGE_PROVIDER_CONFIG_KEY, STORAGE_PROVIDER_NACOS_CONFIG);
-        return StringUtils.isBlank(provider) ? STORAGE_PROVIDER_NACOS_CONFIG : provider.trim();
+            EnvUtil.getProperty(SKILL_STORAGE_PROVIDER_CONFIG_KEY);
+        if (StringUtils.isNotBlank(provider)) {
+            return provider.trim();
+        }
+        return EnvUtil.getStandaloneMode() ? LocalDiskAiResourceStorage.TYPE
+            : NacosConfigAiResourceStorage.TYPE;
     }
     
     /**
@@ -1303,7 +1304,9 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         byte[] mdBytes =
             (skill.getSkillMd() == null ? "" : skill.getSkillMd()).getBytes(StandardCharsets.UTF_8);
         StorageKey mdKey =
-            NacosConfigAiResourceStorage.buildStorageKey(provider, namespaceId, skillName, version,
+            AiResourceStorage.buildStorageKey(provider, namespaceId,
+                AiResourceStorage.RESOURCE_TYPE_SKILL,
+                skillName, version,
                 mdPath);
         files.add(mdPath);
         tasks.add(CompletableFuture.runAsync(() -> {
@@ -1325,7 +1328,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
                 byte[] content = (resource.getContent() == null ? "" : resource.getContent())
                     .getBytes(StandardCharsets.UTF_8);
                 StorageKey resourceKey =
-                    NacosConfigAiResourceStorage.buildStorageKey(provider, namespaceId, skillName,
+                    AiResourceStorage.buildStorageKey(provider, namespaceId,
+                        AiResourceStorage.RESOURCE_TYPE_SKILL, skillName,
                         version, path);
                 files.add(path);
                 tasks.add(CompletableFuture.runAsync(() -> {
@@ -1412,8 +1416,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         
         // Read storage files one by one, handle differently based on filename:
         for (String filePath : files) {
-            StorageKey key = NacosConfigAiResourceStorage.buildStorageKey(provider, namespaceId,
-                skillName, version,
+            StorageKey key = AiResourceStorage.buildStorageKey(provider, namespaceId,
+                AiResourceStorage.RESOURCE_TYPE_SKILL, skillName, version,
                 filePath);
             byte[] bytes = storageRouter.route(key).get(key);
             if (bytes == null) {
@@ -1500,8 +1504,8 @@ public class SkillOperationServiceImpl implements SkillOperationService {
         }
         String provider = resolveSkillStorageProvider();
         for (String filePath : files) {
-            StorageKey key = NacosConfigAiResourceStorage.buildStorageKey(provider, namespaceId,
-                skillName, version,
+            StorageKey key = AiResourceStorage.buildStorageKey(provider, namespaceId,
+                AiResourceStorage.RESOURCE_TYPE_SKILL, skillName, version,
                 filePath);
             storageRouter.route(key).delete(key);
         }

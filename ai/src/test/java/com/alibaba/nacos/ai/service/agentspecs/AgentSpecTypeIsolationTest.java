@@ -22,6 +22,7 @@ import com.alibaba.nacos.ai.service.repository.AiResourcePersistService;
 import com.alibaba.nacos.ai.service.repository.AiResourceVersionPersistService;
 import com.alibaba.nacos.ai.service.repository.QueryCondition;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
+import com.alibaba.nacos.plugin.ai.storage.spi.AiResourceStorage;
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecUtils;
 import com.alibaba.nacos.api.ai.model.skills.SkillUtils;
 import com.alibaba.nacos.api.model.Page;
@@ -185,8 +186,8 @@ class AgentSpecTypeIsolationTest {
             for (String version : sampleVersions()) {
                 // AgentSpec storage key embeds "agentspec" resource type
                 String agentSpecKey =
-                    NacosConfigAiResourceStorage.buildStorageKey(NacosConfigAiResourceStorage.TYPE,
-                        NAMESPACE_ID, NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC, name,
+                    AiResourceStorage.buildStorageKey(NacosConfigAiResourceStorage.TYPE,
+                        NAMESPACE_ID, AiResourceStorage.RESOURCE_TYPE_AGENTSPEC, name,
                         version,
                         AgentSpecUtils.AGENTSPEC_MAIN_DATA_ID).getKey();
                 
@@ -197,9 +198,9 @@ class AgentSpecTypeIsolationTest {
                     "AgentSpec key resource type should be 'agentspec'");
                 
                 // Skill storage key embeds "skill" resource type
-                String skillKey = NacosConfigAiResourceStorage
+                String skillKey = AiResourceStorage
                     .buildStorageKey(NacosConfigAiResourceStorage.TYPE,
-                        NAMESPACE_ID, NacosConfigAiResourceStorage.RESOURCE_TYPE_SKILL, name,
+                        NAMESPACE_ID, AiResourceStorage.RESOURCE_TYPE_SKILL, name,
                         version,
                         SkillUtils.SKILL_MAIN_DATA_ID)
                     .getKey();

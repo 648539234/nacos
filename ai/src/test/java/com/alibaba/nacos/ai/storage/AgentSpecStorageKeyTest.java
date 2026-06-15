@@ -18,6 +18,7 @@ package com.alibaba.nacos.ai.storage;
 
 import com.alibaba.nacos.api.ai.model.agentspecs.AgentSpecUtils;
 import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
+import com.alibaba.nacos.plugin.ai.storage.spi.AiResourceStorage;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -64,9 +65,9 @@ class AgentSpecStorageKeyTest {
         for (String namespaceId : validNamespaceIds()) {
             for (String name : validNames()) {
                 for (String version : validVersions()) {
-                    StorageKey key = NacosConfigAiResourceStorage.buildStorageKey(
+                    StorageKey key = AiResourceStorage.buildStorageKey(
                         PROVIDER, namespaceId,
-                        NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC,
+                        AiResourceStorage.RESOURCE_TYPE_AGENTSPEC,
                         name, version, AgentSpecUtils.AGENTSPEC_MAIN_DATA_ID);
                     NacosConfigAiResourceStorage.KeyParts parts =
                         NacosConfigAiResourceStorage.parse(key);
@@ -91,9 +92,9 @@ class AgentSpecStorageKeyTest {
                 for (String version : validVersions()) {
                     String mainFilePath = NacosConfigAiResourceStorage.getMainFilePath(
                         AgentSpecUtils.AGENTSPEC_MAIN_DATA_ID);
-                    StorageKey key = NacosConfigAiResourceStorage.buildStorageKey(
+                    StorageKey key = AiResourceStorage.buildStorageKey(
                         PROVIDER, namespaceId,
-                        NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC,
+                        AiResourceStorage.RESOURCE_TYPE_AGENTSPEC,
                         name, version, mainFilePath);
                     NacosConfigAiResourceStorage.KeyParts parts =
                         NacosConfigAiResourceStorage.parse(key);
@@ -118,9 +119,9 @@ class AgentSpecStorageKeyTest {
                             String resourceFilePath =
                                 NacosConfigAiResourceStorage.getAgentSpecResourceFilePath(
                                     resourceType, resourceName);
-                            StorageKey key = NacosConfigAiResourceStorage.buildStorageKey(
+                            StorageKey key = AiResourceStorage.buildStorageKey(
                                 PROVIDER, namespaceId,
-                                NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC,
+                                AiResourceStorage.RESOURCE_TYPE_AGENTSPEC,
                                 agentSpecName, version, resourceFilePath);
                             NacosConfigAiResourceStorage.KeyParts parts =
                                 NacosConfigAiResourceStorage.parse(key);
@@ -148,9 +149,9 @@ class AgentSpecStorageKeyTest {
         for (String namespaceId : validNamespaceIds()) {
             for (String name : validNames()) {
                 for (String version : validVersions()) {
-                    StorageKey key = NacosConfigAiResourceStorage.buildStorageKey(
+                    StorageKey key = AiResourceStorage.buildStorageKey(
                         PROVIDER, namespaceId,
-                        NacosConfigAiResourceStorage.RESOURCE_TYPE_AGENTSPEC,
+                        AiResourceStorage.RESOURCE_TYPE_AGENTSPEC,
                         name, version, AgentSpecUtils.AGENTSPEC_MAIN_DATA_ID);
                     NacosConfigAiResourceStorage.KeyParts parts =
                         NacosConfigAiResourceStorage.parse(key);

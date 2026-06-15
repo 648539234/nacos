@@ -54,54 +54,6 @@ public class NacosConfigAiResourceStorage implements AiResourceStorage {
     
     public static final String TYPE = "nacos_config";
     
-    /** Resource type identifier for Skill storage keys. */
-    public static final String RESOURCE_TYPE_SKILL = "skill";
-    
-    /** Resource type identifier for AgentSpec storage keys. */
-    public static final String RESOURCE_TYPE_AGENTSPEC = "agentspec";
-    
-    /** Resource type identifier for Prompt storage keys. */
-    public static final String RESOURCE_TYPE_PROMPT = "prompt";
-    
-    /**
-     * Build storage key for Skill resources (legacy 4-part format).
-     * Key format: namespaceId:skillName:version:filePath.
-     * Kept for backward compatibility; new Skill code may also use
-     * {@link #buildStorageKey(String, String, String, String, String, String)} with {@link #RESOURCE_TYPE_SKILL}.
-     *
-     * @param provider    storage provider (e.g. {@link #TYPE})
-     * @param namespaceId namespace
-     * @param skillName   skill name
-     * @param version     version
-     * @param filePath    file path (use {@link #getResourceFilePath(String, String)})
-     * @return StorageKey for route and save/get/delete
-     */
-    public static StorageKey buildStorageKey(String provider, String namespaceId, String skillName,
-        String version,
-        String filePath) {
-        String key = namespaceId + ":" + skillName + ":" + version + ":" + filePath;
-        return new StorageKey(provider, key);
-    }
-    
-    /**
-     * Build storage key with explicit resource type (5-part format).
-     * Key format: namespaceId:resourceType:name:version:filePath.
-     *
-     * @param provider     storage provider (e.g. {@link #TYPE})
-     * @param namespaceId  namespace
-     * @param resourceType resource type ({@link #RESOURCE_TYPE_SKILL}, {@link #RESOURCE_TYPE_AGENTSPEC} or {@link #RESOURCE_TYPE_PROMPT})
-     * @param name         resource name (skill name or agentspec name)
-     * @param version      version
-     * @param filePath     file path (use {@link #getMainFilePath(String)} or resource file path helpers)
-     * @return StorageKey for route and save/get/delete
-     */
-    public static StorageKey buildStorageKey(String provider, String namespaceId,
-        String resourceType, String name,
-        String version, String filePath) {
-        String key = namespaceId + ":" + resourceType + ":" + name + ":" + version + ":" + filePath;
-        return new StorageKey(provider, key);
-    }
-    
     /**
      * Main Skill file path (dataId) for Nacos Config.
      */

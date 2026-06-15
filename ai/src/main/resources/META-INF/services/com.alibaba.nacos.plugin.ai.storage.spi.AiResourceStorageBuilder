@@ -13,4 +13,5 @@
 # limitations under the License.
 
 com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorageBuilder
+com.alibaba.nacos.ai.storage.LocalDiskAiResourceStorageBuilder
 

@@ -31,7 +31,36 @@ import com.alibaba.nacos.plugin.ai.storage.model.StorageKey;
  * @since 3.2.0
  */
 public interface AiResourceStorage {
-    
+
+    /** Resource type identifier for Skill storage keys. */
+    String RESOURCE_TYPE_SKILL = "skill";
+
+    /** Resource type identifier for AgentSpec storage keys. */
+    String RESOURCE_TYPE_AGENTSPEC = "agentspec";
+
+    /** Resource type identifier for Prompt storage keys. */
+    String RESOURCE_TYPE_PROMPT = "prompt";
+
+    /**
+     * Build a provider-agnostic {@link StorageKey} with the typed 5-part key format.
+     *
+     * <p>Key format: {@code namespaceId:resourceType:name:version:filePath}.
+     * Each storage implementation parses this key according to its own path conventions.</p>
+     *
+     * @param provider     storage provider type, e.g. "nacos_config", "local_disk"
+     * @param namespaceId  namespace
+     * @param resourceType resource type ("skill", "agentspec", "prompt")
+     * @param name         resource name
+     * @param version      version string
+     * @param filePath     relative file path within the resource version
+     * @return a new StorageKey instance
+     */
+    static StorageKey buildStorageKey(String provider, String namespaceId, String resourceType,
+            String name, String version, String filePath) {
+        String key = namespaceId + ":" + resourceType + ":" + name + ":" + version + ":" + filePath;
+        return new StorageKey(provider, key);
+    }
+
     /**
      * Type identifier, corresponding to {@link StorageKey#getProvider()}.
      *

@@ -19,7 +19,7 @@ package com.alibaba.nacos.ai.service.prompt;
 import static com.alibaba.nacos.ai.constant.AiResourceConstants.LABEL_LATEST;
 import static com.alibaba.nacos.ai.constant.AiResourceConstants.VERSION_STATUS_DRAFT;
 import static com.alibaba.nacos.ai.constant.AiResourceConstants.VERSION_STATUS_ONLINE;
-import static com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage.RESOURCE_TYPE_PROMPT;
+import static com.alibaba.nacos.plugin.ai.storage.spi.AiResourceStorage.RESOURCE_TYPE_PROMPT;
 
 import com.alibaba.nacos.ai.config.PromptDataMigrationTask;
 import com.alibaba.nacos.ai.constant.Constants;
@@ -33,7 +33,9 @@ import com.alibaba.nacos.ai.service.resource.AiResourceManager;
 import com.alibaba.nacos.ai.service.resource.ResourceVersionInfo;
 import com.alibaba.nacos.ai.service.trace.AiResourceTraceService;
 import com.alibaba.nacos.ai.pipeline.model.PipelineExecutionResult;
+import com.alibaba.nacos.ai.storage.LocalDiskAiResourceStorage;
 import com.alibaba.nacos.ai.storage.NacosConfigAiResourceStorage;
+import com.alibaba.nacos.plugin.ai.storage.spi.AiResourceStorage;
 import com.alibaba.nacos.plugin.ai.storage.AiResourceStorageRouter;
 import com.alibaba.nacos.ai.utils.PromptVersionUtils;
 import com.alibaba.nacos.api.ai.model.prompt.PromptMetaInfo;
@@ -732,7 +734,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         content.setMd5(md5);
         
         byte[] contentBytes = JacksonUtils.toJson(content).getBytes(StandardCharsets.UTF_8);
-        StorageKey storageKey = NacosConfigAiResourceStorage.buildStorageKey(provider, namespaceId,
+        StorageKey storageKey = AiResourceStorage.buildStorageKey(provider, namespaceId,
             RESOURCE_TYPE_PROMPT, promptKey, version,
             PromptUtils.PROMPT_MAIN_DATA_ID);
         storageRouter.route(storageKey).save(storageKey, contentBytes);
@@ -742,7 +744,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         String version)
         throws NacosException {
         String provider = resolvePromptStorageProvider();
-        StorageKey storageKey = NacosConfigAiResourceStorage.buildStorageKey(provider, namespaceId,
+        StorageKey storageKey = AiResourceStorage.buildStorageKey(provider, namespaceId,
             RESOURCE_TYPE_PROMPT, promptKey, version,
             PromptUtils.PROMPT_MAIN_DATA_ID);
         byte[] data = storageRouter.route(storageKey).get(storageKey);
@@ -762,7 +764,7 @@ public class PromptOperationServiceImpl implements PromptOperationService {
         try {
             String provider = resolvePromptStorageProvider();
             StorageKey storageKey =
-                NacosConfigAiResourceStorage.buildStorageKey(provider, namespaceId,
+                AiResourceStorage.buildStorageKey(provider, namespaceId,
                     RESOURCE_TYPE_PROMPT, promptKey, version,
                     PromptUtils.PROMPT_MAIN_DATA_ID);
             storageRouter.route(storageKey).delete(storageKey);
@@ -781,9 +783,12 @@ public class PromptOperationServiceImpl implements PromptOperationService {
     
     private static String resolvePromptStorageProvider() {
         String provider =
-            EnvUtil.getProperty(PROMPT_STORAGE_PROVIDER_CONFIG_KEY,
-                NacosConfigAiResourceStorage.TYPE);
-        return StringUtils.isBlank(provider) ? NacosConfigAiResourceStorage.TYPE : provider.trim();
+            EnvUtil.getProperty(PROMPT_STORAGE_PROVIDER_CONFIG_KEY);
+        if (StringUtils.isNotBlank(provider)) {
+            return provider.trim();
+        }
+        return EnvUtil.getStandaloneMode() ? LocalDiskAiResourceStorage.TYPE
+            : NacosConfigAiResourceStorage.TYPE;
     }
     
     private AiResource requireMeta(String namespaceId, String promptKey) throws NacosException {
